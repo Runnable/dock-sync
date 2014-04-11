@@ -1,0 +1,46 @@
+#!/usr/bin/env node
+
+/**
+ * Module dependencies.
+ */
+var program = require('commander');
+
+var fs = require('fs');
+var path = require('path');
+var pkg = JSON.parse(
+  fs.readFileSync(
+    path.join(__dirname, '..', 'package.json')
+  )
+);
+var Url = require('url');
+var throwError = require('../lib/throwError');
+
+var DockSync = require('../lib/DockSync');
+
+program
+  .version(pkg.version)
+  .usage('[options]')
+  .option('-d, --dryrun',
+    'Enable dryrun (simulate pushes and pulls). Flag.')
+  .option('-h, --host <s>',
+    'Docker host. Default: $DOCKER_HOST or unix:///var/run/docker.sock')
+  .option('-b --bail',
+    'Exit process on first error. Flag.')
+  .option('-i --private',
+    'Only sync images with internal registries. Flag.')
+  .option('-p --public',
+    'Only sync images with the public registry. Flag.')
+  .option('-c --concurrency <n>',
+    'Push and pull concurrency. Default: 1', parseInt);
+
+program.parse(process.argv);
+
+var dockSync = new DockSync(program);
+
+// Start
+dockSync.start();
+
+// // End on Process Exit
+// process.on('exit', function () {
+//   dockSync.exit();
+// });
