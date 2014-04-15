@@ -1,6 +1,6 @@
 {
   "name": "dock-sync",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "sync all docker images with docker registries (pull if out-of-date, push if newer)",
   "main": "index.js",
   "scripts": {
