@@ -44,7 +44,7 @@
     "tar-stream": "~0.3.2",
     "dockerode": "~1.2.9",
     "array-find": "~0.1.1",
-    "simple-api-client": "~0.2.2"
+    "simple-api-client": "~0.2.3"
   },
   "devDependencies": {
     "lab": "~3.0.1",
