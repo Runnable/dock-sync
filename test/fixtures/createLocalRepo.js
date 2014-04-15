@@ -6,7 +6,7 @@ module.exports = function createLocalRepo (tag, opts, done) {
   if (typeof opts === 'function') {
     done = opts;
     opts = {};
-    opts.from = 'ubuntu';
+    opts.from = 'ubuntu:12.04';
   }
   var pack = tar.pack();
   pack.entry({ name: './', type: 'directory' });

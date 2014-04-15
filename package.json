@@ -4,7 +4,7 @@
   "description": "sync all docker images with docker registries (pull if out-of-date, push if newer)",
   "main": "index.js",
   "scripts": {
-    "test": "NODE_PATH=./lib mocha"
+    "test": "lab -m 20000"
   },
   "repository": {
     "type": "git",
@@ -34,19 +34,16 @@
     "commander": "~2.2.0",
     "validate-type": "~0.1.0",
     "map-utils": "~0.4.0",
-    "simple-api-client": "~0.2.1",
     "docker-mock": "0.0.2",
     "callback-count": "~0.1.0",
     "async": "~0.7.0",
     "tar": "~0.1.19",
     "tar-stream": "~0.3.2",
     "dockerode": "~1.2.9",
-    "array-find": "~0.1.1"
+    "array-find": "~0.1.1",
+    "simple-api-client": "~0.2.2"
   },
   "devDependencies": {
-    "lab": "~3.0.0",
-    "should": "~3.3.0",
-    "mocha": "~1.18.2",
-    "express": "~3.5.1"
+    "lab": "~3.0.1"
   }
 }

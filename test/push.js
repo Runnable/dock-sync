@@ -1,113 +1,87 @@
+var Lab = require('lab');
+var describe = Lab.experiment;
+var it = Lab.test;
+var expect = Lab.expect;
+var beforeEach = Lab.beforeEach;
+var afterEach  = Lab.afterEach;
+
 var async = require('async');
 var docker = require('../lib/docker');
 var runDockSync = require('./fixtures/runDockSync');
 var createLocalRepo = require('./fixtures/createLocalRepo');
-var deleteRepoEverywhere = require('./fixtures/deleteRepoEverywhere');
-var alreadyRunningContainers = require('./fixtures/alreadyRunningContainers');
 var registry = require('simple-api-client')('http://localhost:5000');
 var createCount = require('callback-count');
 var pluck = require('map-utils').pluck;
+var dockerState = require('./fixtures/dockerState');
 require('console-trace')({always:true, right:true});
 
 describe('push', function() {
   beforeEach(function (done) {
     var self = this;
-    initAlreadyRunning(function (err) {
+    dockerState.init(function (err) {
       if (err) return done(err);
-      self.repoName = '/namespace1/repo1';
+      self.repoName = '/namespace/repo';
       self.repo = 'localhost:5000'+self.repoName;
       async.series([
-        deleteRepoEverywhere.bind(null, self.repo),
+        dockerState.cleanup.bind(dockerState),
         createLocalRepo.bind(null, self.repo)
       ], done);
     });
   });
   afterEach(function (done) {
-    var count = createCount(done);
-    var self = this;
-    stopAndDeleteAllContainers(function (err) {
-      if (err) return done(err);
-      deleteRepoEverywhere(self.repo, done);
-    });
+    delete this.repoName;
+    delete this.repo;
+    dockerState.cleanup(done);
   });
-  it('should push a local image if it is missing from the registry', function(done) {
-    this.timeout(20*1000);
-    var repoName = this.repoName;
+  it('should push a local image if it is missing from the registry', function (done) {
+    console.log('should push a local image if it is missing from the registry');
+    var self = this;
     var dockSync = runDockSync({ private: true });
     dockSync.on('exit', function (code) {
       if (code) return done(new Error('code: '+code));
-      getRepoLatestTag(repoName, function (err, body) {
-        if (err) return done(err);
-        done();
-      });
+      assertLocalAndRegistryMatch(self, done);
     });
   });
-  it('should push a local image if has newer tags than the registry', function (done) {
-    var self = this;
-    var repoName = this.repoName;
-    createLocalRepo(this.repo, { from:this.repo }, function (err) {
-      if (err) return done(err);
-
+  describe('newer image', function() {
+    beforeEach(function (done) {
+      this.repoName = '/namespace/repo';
+      this.repo = 'localhost:5000'+this.repoName; // same as above
+      createLocalRepo(this.repo, { from:this.repo }, done); // create new
+    });
+    afterEach(function (done) {
+      delete this.repoName;
+      delete this.repo;
+      done();
+    });
+    it('should push a local image if has newer tags than the registry', function (done) {
+      console.log('should push a local image if has newer tags than the registry');
+      var self = this;
       var dockSync = runDockSync({ private: true });
       dockSync.on('exit', function (code) {
         if (code) return done(new Error('code: '+code));
-
-        getRepoLatestTag(repoName, function (err, body) {
-          if (err) return done(err);
-
-          docker.getImage(self.repo).inspect(function (err, data) {
-            if (err) return done(err);
-            body.should.equal(data.id);
-            done();
-          });
-        });
+        assertLocalAndRegistryMatch(self, done);
       });
     });
   });
-  // it('should not do anything when it finds something wierd', function (done) {
-
-  // });
 });
 
-function getRepoLatestTag (repoName, cb) {
+
+
+function assertLocalAndRegistryMatch (opts, cb) {
+  latestRegistryTag(opts.repo, function (err, body) {
+    if (err) return cb(err);
+    docker.getImage(opts.repoName).inspect(function (err, data) {
+      if (err) return cb(err);
+      expect(body).to.equal(data.id);
+      cb();
+    });
+  });
+}
+
+function latestRegistryTag (repoName, cb) {
   registry.get(['/v1/repositories/', repoName ,'/tags/latest'], function (err, res, body) {
     if (err) return cb(err);
     if (res.statusCode === 404) return cb(new Error('image missing in registry'));
-    cb(null, JSON.parse(body));
-  });
-}
-
-function stopAndDeleteAllContainers (cb) {
-  docker.listContainers(function(err, containers) {
-    async.forEach(containers, function (container) {
-      if (alreadyRunningContainers[container.Id]) return cb();
-      var count = createCount(cb);
-      container = docker.getContainer(container.Id);
-      container.stop(function (err) {
-        if (err)return cb(err);
-        container.remove(function (err) {
-          cb(); // ignore error.. its flakey.
-        });
-      });
-    }, cb);
-  });
-}
-
-function initAlreadyRunning (cb) {
-  docker.listContainers(function(err, containers) {
-    if (err) return cb(err);
-    containers.map(pluck('Id')).forEach(function (containerId) {
-      resetAlreadyRunningContainers();
-      alreadyRunningContainers[containerId] = true;
-    });
-    stopAndDeleteAllContainers(function (err) {
-      cb(err, containers);// ignore err
-    });
-  });
-}
-
-function resetAlreadyRunningContainers () {
-  Object.keys(alreadyRunningContainers).forEach(function (key) {
-    delete alreadyRunningContainers[key]; // reset
+    cb(null, body);
   });
 }
