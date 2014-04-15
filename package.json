@@ -6,6 +6,9 @@
   "scripts": {
     "test": "lab -m 20000"
   },
+  "bin": {
+    "hipcheck": "./bin/hipcheck"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/Runnable/dock-sync.git"
