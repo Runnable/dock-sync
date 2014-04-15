@@ -44,6 +44,7 @@
     "simple-api-client": "~0.2.2"
   },
   "devDependencies": {
-    "lab": "~3.0.1"
+    "lab": "~3.0.1",
+    "console-trace": "git://github.com/numbcoder/console-trace"
   }
 }
